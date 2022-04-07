@@ -79,3 +79,27 @@
   Access the application using _http://34.136.183.32_.
 
 #### Setting up pipeline
+
+* To install the required tasks, pipelines and the required resources we have a script [pipeline/run.sh](./pipeline/run.sh)
+* Before running the script, you need to edit the script and add your image registry credentials, this credentials will be used to push the image to your registry
+* In the run.sh script, look from line no. 13-20 where you need to add your credentials and change image registry if it's different from quay.
+
+Once you are done updating, you can the script
+* this will install all the required Tekton Tasks for our pipeline
+* create registry secret which will be used to push the image
+* service account for the pipeline
+* create required rbac
+* finally, install the pipeline and start the pipeline by creating a pipelinerun
+
+you can look for your pipeline using
+```yaml
+  kubectl get pipelinerun -n news-demo-dev
+  NAME                         SUCCEEDED   REASON    STARTTIME   COMPLETIONTIME
+  news-demo-dev-deploy-bxgnd   Unknown     Running   4s
+```
+To follow the logs for your pipeline run Tekton CLI is very useful
+```yaml
+  tkn pipelinerun -n news-demo-dev logs -f news-demo-dev-deploy-bxgnd
+```
+We have set up our pipeline, the next thing will be to set up trigger so that on GitHub events our pipeline starts automatically.
+
