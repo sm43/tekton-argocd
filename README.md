@@ -76,7 +76,7 @@
     NAME            CLASS   HOSTS   ADDRESS         PORTS   AGE
     news-demo-dev   nginx   *       34.136.183.32   80      8m56s
   ```
-  Access the application using _http://34.136.183.32_.
+  Access the application using _http://34.136.183.32/app_.
 
 #### Setting up pipeline
 
