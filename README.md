@@ -76,7 +76,7 @@
     NAME            CLASS   HOSTS   ADDRESS         PORTS   AGE
     news-demo-dev   nginx   *       34.136.183.32   80      8m56s
   ```
-  Access the application using _http://34.136.183.32/app_.
+  Access the application using _http://34.136.183.32_.
 
 #### Setting up pipeline
 
@@ -103,3 +103,36 @@ To follow the logs for your pipeline run Tekton CLI is very useful
 ```
 We have set up our pipeline, the next thing will be to set up trigger so that on GitHub events our pipeline starts automatically.
 
+#### Setting up triggers
+
+To set up triggers, you need to apply resources in [trigger](./trigger)
+```yaml
+  kubectl apply -f trigger/
+```
+This will
+* create an EventListener which will listening for GitHub Events
+* trigger binding where we define which values do we want to take from incoming event and use in our pipeline
+* trigger template where we define our pipelinerun which will be created and here we use the variables we define in binding
+* ingress to configure our event listener with GitHub
+
+You can look for event listener ingress using
+```yaml
+  kubectl get ingress news-demo-dev-eventlistener
+  NAME                          CLASS   HOSTS   ADDRESS         PORTS   AGE
+  news-demo-dev-eventlistener   nginx   *       34.136.183.32   80      49s
+```
+You can configure _http://34.136.183.32/listener_ with GitHub now.
+
+Next step would be configuring the Event listener with GitHub
+* You can fork https://github.com/sm43/news-demo and you can setup a webhook for the repository.
+* Go to setting of your repository -> Webhooks -> Add Webhook 
+* Add your ingress url in Payload URL
+* Content Type as application/json
+* You can add a secret and use it for validation while setting up triggers, in this demo we are skipping this.
+* Select `Just the push event`. 
+* Add Webhook
+
+Now, you are ready to trigger your pipeline. Push a commit to `tekton-and-agrocd` branch and the pipeline with trigger.
+
+Why `tekton-and-agrocd` branch?
+we have configured our eventlistener to trigger a pipeline if the event is coming from `tekton-and-agrocd` branch.

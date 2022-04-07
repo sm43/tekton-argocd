@@ -1,0 +1,20 @@
+---
+apiVersion: triggers.tekton.dev/v1beta1
+kind: EventListener
+metadata:
+  name: news-demo-dev-listener
+  namespace: news-demo-dev
+spec:
+  serviceAccountName: news-demo-dev-el
+  triggers:
+    - name: news-demo-dev-listener
+      interceptors:
+        - ref:
+            name: "github"
+          params:
+            - name: "eventTypes"
+              value: ["push"]
+      bindings:
+        - ref: news-demo-dev-binding
+      template:
+        ref: news-demo-dev-template
