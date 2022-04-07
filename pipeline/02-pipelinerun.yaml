@@ -1,0 +1,29 @@
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  generateName: news-demo-dev-deploy-
+  namespace: news-demo-dev
+spec:
+  serviceAccountName: news-demo-dev
+  params:
+    - name: REPO
+      value: "https://github.com/sm43/news-demo"
+    - name: REVISION
+      value: "main"
+    - name: IMAGE
+      value: "quay.io/sm43/news-demo-dev"
+    - name: TAG
+      value: "v0.1"
+    - name: NAMESPACE
+      value: "news-demo-dev"
+  pipelineRef:
+    name: news-demo-dev-deploy
+  workspaces:
+    - name: shared-workspace
+      volumeClaimTemplate:
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 1Gi
