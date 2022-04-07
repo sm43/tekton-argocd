@@ -90,7 +90,7 @@ spec:
           value: |
             kubectl patch deployment news-demo-dev --patch='{"spec":{"template":{"spec":{
               "containers":[{
-                "name": "news-demo",
+                "name": "news-demo-dev",
                 "image": "$(params.IMAGE):$(params.TAG)"
               }]
             }}}}' -n $(params.NAMESPACE)
