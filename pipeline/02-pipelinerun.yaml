@@ -9,7 +9,7 @@ spec:
     - name: REPO
       value: "https://github.com/sm43/news-demo"
     - name: REVISION
-      value: "main"
+      value: "kcd"
     - name: IMAGE
       value: "quay.io/sm43/news-demo-dev"
     - name: TAG
