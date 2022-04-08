@@ -16,6 +16,14 @@ spec:
       value: "v0.1"
     - name: NAMESPACE
       value: "news-demo-dev"
+    - name: CONFIG_REPO_URL
+      value: "https://github.com/sm43/tekton-argocd"
+    - name: CONFIG_REPO
+      value: "sm43/tekton-argocd"
+    - name: GIT_USERNAME
+      value: "sm43"
+    - name: GIT_PASSWORD
+      value: "<>"
   pipelineRef:
     name: news-demo-dev-deploy
   workspaces:

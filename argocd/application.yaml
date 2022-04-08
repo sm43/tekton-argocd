@@ -1,0 +1,14 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: news-demo-stage
+  namespace: argocd
+spec:
+  destination:
+    namespace: news-dev-stage
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    path: k8s-stage
+    repoURL: https://github.com/sm43/tekton-argocd
+    targetRevision: HEAD

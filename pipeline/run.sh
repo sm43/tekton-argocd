@@ -11,15 +11,19 @@ kubectl apply -n news-demo-dev -f https://raw.githubusercontent.com/tektoncd/cat
 kubectl apply -n news-demo-dev -f ./pipeline/git-update-deployment-task.yaml
 
 # secret to push image to registry
+# TODO: add you credentials in below command
 kubectl -n news-demo-dev create secret generic registry-secret \
       --type="kubernetes.io/basic-auth" \
       --from-literal=username="<add-your-username-here>" \
       --from-literal=password="<add-your-password-here>"
 
 # annotating registry name to secret
+# TODO: change your image registry if different from quay.io
 kubectl -n news-demo-dev annotate secret registry-secret tekton.dev/docker-0=quay.io
 
 # secret to create pull request to the configuration repo
+# TODO: create a github personal access token and add below
+# this is required for creating a pull request on the staging repository
 kubectl -n news-demo-dev create secret generic github --from-literal token="<add-your-github-token>"
 
 # required role for service account to create/get/patch deployment
@@ -47,4 +51,4 @@ kubectl -n news-demo-dev create rolebinding news-demo-dev \
 kubectl create -n news-demo-dev -f ./pipeline/01-pipeline.yaml
 
 # create pipelineRun
-kubectl create -n news-demo-dev -f ./pipeline/02-pipelinerun.yaml
+# kubectl create -n news-demo-dev -f ./pipeline/02-pipelinerun.yaml
