@@ -1,0 +1,17 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: news-demo-stage
+  namespace: news-demo-stage
+spec:
+  ingressClassName: nginx
+  rules:
+    - http:
+        paths:
+          - path: /stage
+            pathType: Prefix
+            backend:
+              service:
+                name: news-demo-stage
+                port:
+                  number: 3000
