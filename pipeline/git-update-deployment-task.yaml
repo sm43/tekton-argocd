@@ -1,0 +1,62 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: git-update-deployment
+spec:
+  description: This Task is used to update image in a deployment and push to a new branch
+  params:
+    - name: GIT_REPOSITORY
+      type: string
+    - name: GIT_USERNAME
+      type: string
+    - name: GIT_PASSWORD
+      type: string
+    - name: NEW_IMAGE
+      type: string
+    - name: NEW_TAG
+      type: string
+  workspaces:
+    - description: The workspace consisting of project.
+      name: workspace
+  results:
+    - name: commit
+      description: The commit SHA
+  steps:
+    - name: git-clone
+      image: docker.io/alpine/git:v2.26.2
+      workingDir: $(workspaces.workspace.path)
+      script: |
+        rm -rf git-update-digest-workdir
+        git clone $(params.GIT_REPOSITORY) git-update-digest-workdir
+    - name: update-file-and-git-commit
+      image: docker.io/alpine/git:v2.26.2
+      workingDir: $(workspaces.workspace.path)
+      script: |
+        echo #####..updating image..#####
+        cd git-update-digest-workdir
+        sed "s@image:.*@image: $(params.NEW_IMAGE):$(params.NEW_TAG)@"  k8s-stage/02-deployment.yaml > k8s-stage/02-deployment-updated.yaml
+        mv k8s-stage/02-deployment-updated.yaml k8s-stage/02-deployment.yaml
+
+        echo #####..updated file..#####
+        cat k8s-stage/02-deployment.yaml
+
+        echo #####..commiting changes..#####
+        git config user.email "news-demo-ci@news-demo.com"
+        git config user.name "news-demo-ci"
+
+        git checkout -b ci-$(params.NEW_TAG)
+        git status
+        git add .
+        git commit -m "[$(context.taskRun.name)] Deployment Image updated"
+        git remote add auth-origin $(echo $(params.GIT_REPOSITORY) | sed -E "s#https://(.*)#https://$(params.GIT_USERNAME):$(params.GIT_PASSWORD)@\1#g")
+
+        echo #####..pushing changes..#####
+        git push auth-origin ci-$(params.NEW_TAG)
+        RESULT_SHA="$(git rev-parse HEAD | tr -d '\n')"
+        EXIT_CODE="$?"
+        if [ "$EXIT_CODE" != 0 ]
+        then
+          exit $EXIT_CODE
+        fi
+        # Make sure we don't add a trailing newline to the result!
+        echo -n "$RESULT_SHA" > $(results.commit.path)

@@ -10,6 +10,10 @@ spec:
     - name: IMAGE
     - name: TAG
     - name: NAMESPACE
+    - name: CONFIG_REPO_URL
+    - name: CONFIG_REPO
+    - name: GIT_USERNAME
+    - name: GIT_PASSWORD
   workspaces:
     - name: shared-workspace
   tasks:
@@ -28,32 +32,6 @@ spec:
           value: "true"
         - name: revision
           value: $(params.REVISION)
-    - name: build-test
-      runAfter:
-        - fetch-repository
-      taskRef:
-        name: golang-build
-      params:
-        - name: packages
-          value: ./...
-        - name: package
-          value: github.com/sm43/news-demo
-      workspaces:
-        - name: source
-          workspace: shared-workspace
-    - name: unit-tests
-      runAfter:
-        - fetch-repository
-      taskRef:
-        name: golang-test
-      params:
-        - name: package
-          value: github.com/sm43/news-demo
-        - name: flags
-          value: -v -mod=vendor
-      workspaces:
-        - name: source
-          workspace: shared-workspace
     - name: build-push-image
       taskRef:
         name: buildah
@@ -66,8 +44,7 @@ spec:
         - name: FORMAT
           value: "docker"
       runAfter:
-        - build-test
-        - unit-tests
+        - fetch-repository
     - name: check-deployment
       taskRef:
         name: kubernetes-actions
@@ -114,3 +91,44 @@ spec:
         - input: "$(tasks.check-deployment.results.output-result)"
           operator: in
           values: ["no"]
+    - name: update-deployment-image-for-staging
+      taskRef:
+        name: git-update-deployment
+      workspaces:
+        - name: workspace
+          workspace: shared-workspace
+      params:
+      - name: GIT_REPOSITORY
+        value: $(params.CONFIG_REPO_URL) #"https://github.com/sm43/tekton-argocd"
+      - name: GIT_USERNAME
+        value: $(params.GIT_USERNAME) #"sm43"
+      - name: GIT_PASSWORD
+        value: $(params.GIT_PASSWORD)
+      - name: NEW_IMAGE
+        value: $(params.IMAGE)
+      - name: NEW_TAG
+        value: $(params.TAG)
+      runAfter:
+        - check-deployment
+    - name: create-pullrequest-staging
+      taskRef:
+        name: github-open-pr
+      params:
+        - name: REPO_FULL_NAME
+          value: $(params.CONFIG_REPO)
+        - name: HEAD
+          value: ci-$(params.TAG)
+        - name: BASE
+          value: "main"
+        - name: TITLE
+          value: "Updating Deployment Image"
+        - name: BODY
+          value: "updating image for staging deployment"
+        - name: AUTH_TYPE
+          value: token
+        - name: GITHUB_TOKEN_SECRET_NAME
+          value: github
+        - name: GITHUB_TOKEN_SECRET_KEY
+          value: token
+      runAfter:
+        - update-deployment-image-for-staging

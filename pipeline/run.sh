@@ -5,10 +5,10 @@ kubectl create namespace news-demo-dev 2>/dev/null || true
 
 # install tasks for pipeline
 kubectl apply -n news-demo-dev -f https://raw.githubusercontent.com/tektoncd/catalog/main/task/git-clone/0.5/git-clone.yaml
-kubectl apply -n news-demo-dev -f https://raw.githubusercontent.com/tektoncd/catalog/main/task/golang-build/0.3/golang-build.yaml
-kubectl apply -n news-demo-dev -f https://raw.githubusercontent.com/tektoncd/catalog/main/task/golang-test/0.2/golang-test.yaml
 kubectl apply -n news-demo-dev -f https://raw.githubusercontent.com/tektoncd/catalog/main/task/buildah/0.3/buildah.yaml
 kubectl apply -n news-demo-dev -f https://raw.githubusercontent.com/tektoncd/catalog/main/task/kubernetes-actions/0.2/kubernetes-actions.yaml
+kubectl apply -n news-demo-dev -f https://raw.githubusercontent.com/tektoncd/catalog/main/task/github-open-pr/0.2/github-open-pr.yaml
+kubectl apply -n news-demo-dev -f ./pipeline/git-update-deployment-task.yaml
 
 # secret to push image to registry
 kubectl -n news-demo-dev create secret generic registry-secret \
@@ -18,6 +18,9 @@ kubectl -n news-demo-dev create secret generic registry-secret \
 
 # annotating registry name to secret
 kubectl -n news-demo-dev annotate secret registry-secret tekton.dev/docker-0=quay.io
+
+# secret to create pull request to the configuration repo
+kubectl -n news-demo-dev create secret generic github --from-literal token="<add-your-github-token>"
 
 # required role for service account to create/get/patch deployment
 kubectl -n news-demo-dev create role news-demo-dev-access \

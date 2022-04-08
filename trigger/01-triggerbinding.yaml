@@ -11,4 +11,4 @@ spec:
     - name: gitrepositoryurl
       value: $(body.repository.url)
     - name: createdat
-      value: $(body.repository.created_at)
+      value: $(body.repository.pushed_at)
