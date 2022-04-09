@@ -12,3 +12,8 @@ spec:
     path: k8s-stage
     repoURL: https://github.com/sm43/tekton-argocd
     targetRevision: HEAD
+  ignoreDifferences:
+    - group: ""
+      kind: ConfigMap
+      jsonPointers:
+        - /data/NEWS_API_KEY
