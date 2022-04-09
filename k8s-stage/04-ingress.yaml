@@ -5,7 +5,7 @@ metadata:
   namespace: news-demo-stage
 spec:
   rules:
-    - host: news-demo-stage.apps.shivam.devcluster.openshift.com
+    - host: news-demo-stage.apps.ci-ln-ycw3m0k-72292.origin-ci-int-gce.dev.rhcloud.com
       http:
         paths:
           - backend:
