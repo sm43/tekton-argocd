@@ -106,6 +106,8 @@ spec:
         value: $(params.GIT_PASSWORD)
       - name: NEW_IMAGE
         value: $(params.IMAGE)
+      - name: BASE_BRANCH
+        value: "single-cluster"
       - name: NEW_TAG
         value: $(params.TAG)
       runAfter:
@@ -119,7 +121,7 @@ spec:
         - name: HEAD
           value: ci-$(params.TAG)
         - name: BASE
-          value: "main"
+          value: "single-cluster"
         - name: TITLE
           value: "Updating Deployment Image"
         - name: BODY

@@ -14,8 +14,8 @@ kubectl apply -n news-demo-dev -f ./pipeline/git-update-deployment-task.yaml
 # TODO: add you credentials in below command
 kubectl -n news-demo-dev create secret generic registry-secret \
       --type="kubernetes.io/basic-auth" \
-      --from-literal=username="<add-your-username-here>" \
-      --from-literal=password="<add-your-password-here>"
+      --from-literal=username="$(pass quay/user)" \
+      --from-literal=password="$(pass quay/password)"
 
 # annotating registry name to secret
 # TODO: change your image registry if different from quay.io
@@ -24,7 +24,7 @@ kubectl -n news-demo-dev annotate secret registry-secret tekton.dev/docker-0=qua
 # secret to create pull request to the configuration repo
 # TODO: create a github personal access token and add below
 # this is required for creating a pull request on the staging repository
-kubectl -n news-demo-dev create secret generic github --from-literal token="<add-your-github-token>"
+kubectl -n news-demo-dev create secret generic github --from-literal token="$(pass github/token)"
 
 # required role for service account to create/get/patch deployment
 kubectl -n news-demo-dev create role news-demo-dev-access \
@@ -42,6 +42,9 @@ secrets:
   - name: registry-secret
 EOF
 
+# openshift specific, not required for any other kubernetes cluster
+oc adm policy add-scc-to-user privileged system:serviceaccount:news-demo-dev:news-demo-dev 2>/dev/null || true
+
 # role binding to attach role to serviceAccount
 kubectl -n news-demo-dev create rolebinding news-demo-dev \
     --serviceaccount=news-demo-dev:news-demo-dev \
@@ -52,3 +55,45 @@ kubectl create -n news-demo-dev -f ./pipeline/01-pipeline.yaml
 
 # create pipelineRun
 # kubectl create -n news-demo-dev -f ./pipeline/02-pipelinerun.yaml
+
+GIT_PASSWORD=$(pass github/token)
+
+cat <<EOF | kubectl -n news-demo-dev create -f-
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  generateName: news-demo-dev-deploy-
+  namespace: news-demo-dev
+spec:
+  serviceAccountName: news-demo-dev
+  params:
+    - name: REPO
+      value: "https://github.com/sm43/news-demo"
+    - name: REVISION
+      value: "main"
+    - name: IMAGE
+      value: "quay.io/sm43/news-demo-dev"
+    - name: TAG
+      value: "v0.1"
+    - name: NAMESPACE
+      value: "news-demo-dev"
+    - name: CONFIG_REPO_URL
+      value: "https://github.com/sm43/tekton-argocd"
+    - name: CONFIG_REPO
+      value: "sm43/tekton-argocd"
+    - name: GIT_USERNAME
+      value: "sm43"
+    - name: GIT_PASSWORD
+      value: "${GIT_PASSWORD}"
+  pipelineRef:
+    name: news-demo-dev-deploy
+  workspaces:
+    - name: shared-workspace
+      volumeClaimTemplate:
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 1Gi
+EOF

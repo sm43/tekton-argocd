@@ -9,7 +9,7 @@ spec:
     - name: REPO
       value: "https://github.com/sm43/news-demo"
     - name: REVISION
-      value: "tekton-and-agrocd"
+      value: "main"
     - name: IMAGE
       value: "quay.io/sm43/news-demo-dev"
     - name: TAG
@@ -23,7 +23,7 @@ spec:
     - name: GIT_USERNAME
       value: "sm43"
     - name: GIT_PASSWORD
-      value: "<>"
+      value: "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"
   pipelineRef:
     name: news-demo-dev-deploy
   workspaces:

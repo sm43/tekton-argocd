@@ -11,6 +11,8 @@ spec:
       type: string
     - name: GIT_PASSWORD
       type: string
+    - name: BASE_BRANCH
+      type: string
     - name: NEW_IMAGE
       type: string
     - name: NEW_TAG
@@ -27,7 +29,7 @@ spec:
       workingDir: $(workspaces.workspace.path)
       script: |
         rm -rf git-update-digest-workdir
-        git clone $(params.GIT_REPOSITORY) git-update-digest-workdir
+        git clone -b $(params.BASE_BRANCH) $(params.GIT_REPOSITORY) git-update-digest-workdir
     - name: update-file-and-git-commit
       image: docker.io/alpine/git:v2.26.2
       workingDir: $(workspaces.workspace.path)
