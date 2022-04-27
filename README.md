@@ -5,46 +5,44 @@
 ![flow diagram](./images/flow.png)
 
 
-* We have 2 clusters - dev and stage
-* Tekton Pipeline is set up on dev and ArgoCD on the stage cluster
-* We will have the app deployed on both the clusters but in different ways
-  * We will deploy on dev cluster by Tekton Pipelines
-  * Once it is deployed we will test the changes, and approve the changes for staging
-  * Once the changes are approved, ArgoCD will deploy the change to stage cluster
+* We have a Kubernetes clusters and 2 namespaces 
+* Tekton Pipeline and ArgoCD is setup on the cluster
+* We will have the app deployed in both the namespaces but in different ways
+  * We will deploy in dev namespace by Tekton Pipelines
+  * Once it is deployed we will test the changes, and approve the changes for staging instance
+  * Once the changes are approved, ArgoCD will deploy the change to stage namespace
 * We have 2 Repositories:
   * sm43/news-demo: this is where our app code is.
   * sm43/tekton-argocd: this is our configuration for staging cluster is.
   * NOTE: it is not required to necessary to have 2 repositories, you can merge them together and work
-* Tekton will be installed and dev cluster and configured with our code repository
+* Tekton will be installed and configured with our code repository
   * For this demo, please note we consider events on `tekton-and-argocd` branch
   * When a pull request is merged in `tekton-and-argocd` branch or a commit is pushed in `tekton-and-argocd` branch, a Tekton Pipeline will be started
-  * There is a Tekton Triggers EventListener which will be set up on dev cluster, listening to GitHub events.
+  * There is a Tekton Triggers EventListener which will be set up on the cluster, listening to GitHub events.
   * It will process the event, and start the Pipeline
   * The pipeline does the following tasks:
     * It clones the repository
     * Build a new image and push it to remote image registry which we will configure
-    * Deploy the image on the dev cluster
+    * Deploy the image on the dev instance
     * Creates a pull request to the staging configuration repository (sm43/tekton-argocd)
     * And the pipeline, ends.
-* Now, the application is deployed on dev cluster, we can access it and test it if the changes are fine.
+* Now, the application is deployed in dev namespace, we can access it and test it if the changes are fine.
 * Once we are ready, we will merge the pull request `tekton-argocd` repository
-* This means we are ready to deploy the changes on stage cluster
-* ArgoCD is installed on stage cluster
+* This means we are ready to deploy the changes to stage instance
+* ArgoCD is also installed on the cluster
   * We configure argocd to watch our app configuration in `tekton-argocd` repository
-  * Whenever there is a change in configuration, argocd watched that and reflect that on the cluster
-  * So when we merge the pull request, argocd will know something is changed in application manifest
+  * Whenever there is a change in configuration, argocd watches that and reflect that on the cluster
+  * So when we merge the pull request on config repo, argocd will know something is changed in application manifest
   * It will reapply the changes on the cluster, and we will be able to see the changes.
 
 
 ### Prerequisite
 
 * Kubernetes Clusters
-  * This demo is created with 2 clusters (dev and stage), but you could set up the demo on a single cluster in different namespaces
-  
 
 ### Installation
 
-* **Tekton on Dev Cluster** 
+* **Tekton** 
   * You can install tekton projects using tekton operator. To install Tekton Operator you can find the latest release yaml [here](https://github.com/tektoncd/operator/releases).
   * While writing this, the latest version is v0.55.1.
   * The Operator will install Tekton Pipelines, Tekton Triggers and Tekton Dashboard.
@@ -59,14 +57,13 @@
   ```
 
 
-* **ArgoCD on Stage Cluster**
+* **ArgoCD**
   * You can install argo cd using release yaml. You can find the latest release yaml [here](https://github.com/argoproj/argo-cd/releases).
   * While writing this, the latest version is v2.3.3
   ```yaml
     kubectl create namespace argocd
     kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/v2.3.3/manifests/ha/install.yaml
   ```
-
 
 * **Ingress Controller**
   * You need to install ingress to expose Tekton EventListener to configure with GitHub. Also, Tekton Dashboard/Argo CD dashboard if you like.
@@ -95,7 +92,7 @@
   ```
   You can use the address and access in your browser _http://34.136.183.32/dashboard_
 
-### Setting up Pipelines & Triggers (Dev Cluster)
+### Setting up Pipelines & Triggers
 
 * We will be using [news-demo](https://github.com/sm43/news-demo/tree/tekton-and-argocd) app for the demo.
 * Please make sure you are using `tekton-and-argocd` branch of the code repository
@@ -198,7 +195,7 @@ NOTE: when the pipeline is triggered manually and by triggers, it also creates a
 argocd, so it will not have any effect even if we merge it.
 
 
-### Setting up Application (Stage Cluster)
+### Setting up Application
 
 * We will configure ArgoCD to watch our application manifests in a git repository
 * Whenever there will be a change in manifests, argocd will notice that and reflect the changes on the cluster
