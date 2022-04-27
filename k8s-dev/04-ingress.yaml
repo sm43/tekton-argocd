@@ -4,14 +4,14 @@ metadata:
   name: news-demo-dev
   namespace: news-demo-dev
 spec:
-  ingressClassName: nginx
   rules:
-    - http:
+    - host: news-demo-dev.apps.shivam.devcluster.openshift.com
+      http:
         paths:
-          - path: /
-            pathType: Prefix
-            backend:
+          - backend:
               service:
                 name: news-demo-dev
                 port:
                   number: 3000
+            path: /
+            pathType: Prefix
