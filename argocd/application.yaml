@@ -11,7 +11,7 @@ spec:
   source:
     path: k8s-stage
     repoURL: https://github.com/sm43/tekton-argocd
-    targetRevision: HEAD
+    targetRevision: single-cluster
   ignoreDifferences:
     - group: ""
       kind: ConfigMap
