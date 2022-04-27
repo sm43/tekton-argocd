@@ -17,3 +17,6 @@ spec:
       kind: ConfigMap
       jsonPointers:
         - /data/NEWS_API_KEY
+  syncPolicy:
+    syncOptions:
+      - RespectIgnoreDifferences=true
