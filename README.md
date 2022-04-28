@@ -5,19 +5,18 @@
 ![flow diagram](./images/flow.png)
 
 
-* We have a Kubernetes clusters and 2 namespaces 
-* Tekton Pipeline and ArgoCD is setup on the cluster
+* We have a Kubernetes clusters 
+* Tekton Pipeline and ArgoCD is set up on the cluster
 * We will have the app deployed in both the namespaces but in different ways
   * We will deploy in dev namespace by Tekton Pipelines
   * Once it is deployed we will test the changes, and approve the changes for staging instance
-  * Once the changes are approved, ArgoCD will deploy the change to stage namespace
+  * Once the changes are approved, ArgoCD will deploy the changes to stage namespace
 * We have 2 Repositories:
   * sm43/news-demo: this is where our app code is.
   * sm43/tekton-argocd: this is our configuration for staging cluster is.
   * NOTE: it is not required to necessary to have 2 repositories, you can merge them together and work
 * Tekton will be installed and configured with our code repository
-  * For this demo, please note we consider events on `tekton-and-argocd` branch
-  * When a pull request is merged in `tekton-and-argocd` branch or a commit is pushed in `tekton-and-argocd` branch, a Tekton Pipeline will be started
+  * When a pull request is merged in `main` branch or a commit is pushed in `main` branch, a Tekton Pipeline will be started
   * There is a Tekton Triggers EventListener which will be set up on the cluster, listening to GitHub events.
   * It will process the event, and start the Pipeline
   * The pipeline does the following tasks:
@@ -64,39 +63,11 @@
     kubectl create namespace argocd
     kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/v2.3.3/manifests/ha/install.yaml
   ```
-
-* **Ingress Controller**
-  * You need to install ingress to expose Tekton EventListener to configure with GitHub. Also, Tekton Dashboard/Argo CD dashboard if you like.
-  * You can find the installation steps [here](https://kubernetes.github.io/ingress-nginx/deploy/) based on your cluster type.
-  ```yaml
-    kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.1.3/deploy/static/provider/cloud/deploy.yaml
-  ```
-
-
-### Configuring Ingress 
-
-* Before creating ingress, we need to create an ingress class
-  ```yaml
-    kubectl apply -f ingress/ingress-class.yaml
-  ```
-
-* Now, we can create an ingress for Tekton Dashboard
-  ```yaml
-    kubectl apply -f ingress/dashboard.yaml 
-  ```
-  You can look for ingress as below
-  ```yaml
-    kubectl get ingress -n tekton-pipelines 
-    NAME               CLASS   HOSTS   ADDRESS         PORTS   AGE
-    tekton-dashboard   nginx   *       34.136.183.32   80      5m20s
-  ```
-  You can use the address and access in your browser _http://34.136.183.32/dashboard_
-
+  
 ### Setting up Pipelines & Triggers
 
-* We will be using [news-demo](https://github.com/sm43/news-demo/tree/tekton-and-argocd) app for the demo.
-* Please make sure you are using `tekton-and-argocd` branch of the code repository
-* All the code for app resides in [news-demo](https://github.com/sm43/news-demo/tree/tekton-and-argocd) repo but all configuration for CI/CD are in [tekton-argocd](https://github.com/sm43/tekton-argocd).
+* We will be using [news-demo](https://github.com/sm43/news-demo) app for the demo.
+* All the code for app resides in [news-demo](https://github.com/sm43/news-demo) repo but all configuration for CI/CD are in [tekton-argocd](https://github.com/sm43/tekton-argocd).
 
 #### App Prerequisites
 
@@ -109,13 +80,11 @@
   ```yaml
     kubectl apply -f k8s-dev/
   ```
-  Now, you wait for pod to come up, and you can get ingress by
+  Now, you wait for pod to come up, and you can get route by
   ```yaml
-    kubectl get ingress -n news-demo-dev 
-    NAME            CLASS   HOSTS   ADDRESS         PORTS   AGE
-    news-demo-dev   nginx   *       34.136.183.32   80      8m56s
+    kubectl get route -n news-demo-dev 
   ```
-  Access the application using _http://34.136.183.32_.
+  This repo is using openshift route, but if you don't have a openshift cluster, you can expose the service using ingress. 
 
 #### Setting up pipeline
 
@@ -135,7 +104,7 @@ before applying pipelinerun,
 * You need to fork both the repos
 * edit [./pipeline/02-pipelinerun.yaml](./pipeline/02-pipelinerun.yaml) and add your token and replace your repository url by
 * replace image registry with yours
-* add GitHub personal access token for GIT_PASSWORD and replace git usernames
+* add GitHub personal access token for GIT_PASSWORD and replace git username
 * then you can apply the pipelinerun
 
 you can look for your pipeline using
@@ -169,31 +138,25 @@ This will
 * trigger template where we define our pipelinerun which will be created and here we use the variables we define in binding
 * ingress to configure our event listener with GitHub
 
-You can look for event listener ingress using
+You can look for event listener route using
 ```yaml
-  kubectl get ingress news-demo-dev-eventlistener
-  NAME                          CLASS   HOSTS   ADDRESS         PORTS   AGE
-  news-demo-dev-eventlistener   nginx   *       34.136.183.32   80      49s
+  kubectl get route news-demo-dev-eventlistener -n news-demo-dev
 ```
-You can configure _http://34.136.183.32/listener_ with GitHub now.
+You can configure route with GitHub now.
 
 Next step would be configuring the Event listener with GitHub
 * You can fork https://github.com/sm43/news-demo, and you can set up a webhook for the repository.
 * Go to setting of your repository -> Webhooks -> Add Webhook 
-* Add your ingress url in Payload URL
+* Add your route url in Payload URL
 * Content Type as application/json
 * You can add a secret and use it for validation while setting up triggers, in this demo we are skipping this.
 * Select `Just the push event`. 
 * Add Webhook
 
-Now, you are ready to trigger your pipeline. Push a commit to `tekton-and-agrocd` branch and the pipeline with trigger.
-
-Why `tekton-and-agrocd` branch?
-we have working code for this demo in `tekton-and-agrocd` branch, so we have used the same branch in pipelinerun and trigger template to build from.
+Now, you are ready to trigger your pipeline. Push a commit to `main` branch and the pipeline with trigger.
 
 NOTE: when the pipeline is triggered manually and by triggers, it also creates a pull request on configuration repository, but we haven't set up
 argocd, so it will not have any effect even if we merge it.
-
 
 ### Setting up Application
 
@@ -210,7 +173,8 @@ argocd, so it will not have any effect even if we merge it.
   kubectl apply -f argocd/
 ```
 
-Now, if you go to `news-demo-stage` namespace, you will find the deployed application and using the ingress you can access it.
+Now, if you go to argocd dashboard and sync our application then you will find the deployed application in `news-demo-stage`
+namespace and using the route you can access it.
 
 
 > The Docs is not perfect please feel free to create a pull request or creating an issue to improve it.
